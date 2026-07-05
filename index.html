@@ -67,6 +67,7 @@
 
 <script>
     const baseUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQd7RZ5-PO-knXZfYohz6daMXryQTgJ27DJIHAUEBLiB6wT-s5lB_zraplf3K-RMuEWFX3lTx52vLcf/pub?output=csv";
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbx-AqNSfQKd1h4BDk4raw9h8oMSgHBk1gbcYsY8sz__Xmr_4MhPC2RQZV4zvD4GcWDycA/exec";
     const statusDiv = document.getElementById('status');
     const stageSelect = document.getElementById('stage');
     const matchListDiv = document.getElementById('match-list');
@@ -75,23 +76,30 @@
         statusDiv.innerText = "ŁADOWANIE...";
         matchListDiv.innerHTML = "";
         const gid = stageSelect.value;
-        const url = `${baseUrl}&gid=${gid}`;
+        const url = `${baseUrl}&gid=${gid}&cachebash=${Date.now()}`;
 
         try {
             const response = await fetch(url);
             const text = await response.text();
-            const lines = text.split('\n').filter(line => line.trim() !== "");
+            const lines = text.split('\n').map(l => l.replace(/"/g, '').trim()).filter(l => l !== "");
             
             lines.forEach((line, index) => {
-                const teams = line.replace(/,/g, ' - ');
+                const cells = line.split(',');
+                // NOWA STRUKTURA: Kolumna 1 (0) = Nr, Kolumna 2 (1) = Drużyna A, Kolumna 3 (2) = Drużyna B
+                const nrMeczu = cells[0] || (index + 1);
+                const t1 = cells[1] || "Drużyna A";
+                const t2 = cells[2] || "Drużyna B";
+
                 const row = document.createElement('div');
                 row.className = 'row';
                 row.innerHTML = `
-                    <div class="col-mecz">${teams}</div>
+                    <div class="col-mecz" data-t1="${t1}" data-t2="${t2}" data-nr="${nrMeczu}">
+                        ${nrMeczu}. ${t1} - ${t2}
+                    </div>
                     <div class="col-wynik">
-                        <input type="number" class="g1" data-index="${index}" placeholder="0">
+                        <input type="number" class="g1" placeholder="0">
                         <span>:</span>
-                        <input type="number" class="g2" data-index="${index}" placeholder="0">
+                        <input type="number" class="g2" placeholder="0">
                     </div>
                     <div class="col-joker">
                         <input type="radio" name="joker" value="${index}">
@@ -102,60 +110,60 @@
             statusDiv.innerText = "TYPOWANIE";
         } catch (error) {
             statusDiv.innerText = "BŁĄD SIECI";
-            console.error(error);
         }
     }
 
-async function sendTypy() {
-    const name = document.getElementById('userName').value.trim();
-    const stageText = stageSelect.options[stageSelect.selectedIndex].text;
-    const jokerRadio = document.querySelector('input[name="joker"]:checked');
+    async function sendTypy() {
+        const name = document.getElementById('userName').value.trim();
+        const stageText = stageSelect.options[stageSelect.selectedIndex].text;
+        const jokerRadio = document.querySelector('input[name="joker"]:checked');
 
-    if (!name || !jokerRadio) return alert("Podaj imię i zaznacz Jokera!");
+        if (!name || !jokerRadio) return alert("Podaj imię i zaznacz Jokera!");
 
-    const statusDiv = document.getElementById('status');
-    statusDiv.innerText = "WYSYŁANIE...";
+        statusDiv.innerText = "WYSYŁANIE...";
 
-    const typyDanych = [];
-    const rows = document.querySelectorAll('.row');
-    
-    rows.forEach((row, index) => {
-        const colMecz = row.querySelector('.col-mecz');
-        const t1 = colMecz.getAttribute('data-t1');
-        const t2 = colMecz.getAttribute('data-t2');
-        const g1 = row.querySelector('.g1').value || "0";
-        const g2 = row.querySelector('.g2').value || "0";
+        const typyDanych = [];
+        const rows = document.querySelectorAll('.row');
         
-        typyDanych.push({ druzyna: t1, gole: g1, joker: (jokerRadio.value == index ? "TAK" : "") });
-        typyDanych.push({ druzyna: t2, gole: g2, joker: "" });
-    });
-
-    const payload = {
-        user: name,
-        etap: stageText,
-        typy: typyDanych
-    };
-
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbx-AqNSfQKd1h4BDk4raw9h8oMSgHBk1gbcYsY8sz__Xmr_4MhPC2RQZV4zvD4GcWDycA/exec";
-
-    try {
-        await fetch(scriptUrl, {
-            method: 'POST',
-            mode: 'no-cors', // Ważne dla Apps Script
-            body: JSON.stringify(payload)
+        rows.forEach((row, index) => {
+            const colMecz = row.querySelector('.col-mecz');
+            const t1 = colMecz.getAttribute('data-t1');
+            const t2 = colMecz.getAttribute('data-t2');
+            const nr = colMecz.getAttribute('data-nr');
+            const g1 = row.querySelector('.g1').value || "0";
+            const g2 = row.querySelector('.g2').value || "0";
+            
+            typyDanych.push({ nr: nr, druzyna: t1, gole: g1, joker: (jokerRadio.value == index ? "joker" : "") });
+            typyDanych.push({ nr: nr, druzyna: t2, gole: g2, joker: "" });
         });
-        alert("Typy zostały zapisane w arkuszu!");
-        statusDiv.innerText = "TYPOWANIE";
-    } catch (error) {
-        alert("Błąd wysyłania!");
-        statusDiv.innerText = "BŁĄD";
-    }
-}
 
+        const payload = {
+            user: name,
+            etap: stageText,
+            typy: typyDanych
+        };
+
+        try {
+            await fetch(scriptUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(payload)
+            });
+            alert("Typy zostały zapisane w arkuszu!");
+            // Czyścimy formularz po sukcesie
+            document.getElementById('userName').value = "";
+            loadData(); 
+        } catch (error) {
+            alert("Błąd wysyłania!");
+            statusDiv.innerText = "BŁĄD";
+        }
+    }
 
     stageSelect.addEventListener('change', loadData);
     loadData();
 </script>
+
+  
 
     
 </body>
