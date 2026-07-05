@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typer PWA</title>
+    <!-- Ikona dla iOS -->
+    <link rel="apple-touch-icon" href="[via.placeholder.com](https://via.placeholder.com/192/2e7d32/ffffff?text=T)">
+    <style>
+        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; margin: 0; padding: 15px; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 140px; }
+        
+        .status { text-align: center; font-weight: bold; color: #2e7d32; margin-bottom: 15px; }
+        
+        .table-header { display: flex; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; font-size: 0.9em; }
+        .row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f9f9f9; }
+        
+        .col-mecz { flex: 3; font-size: 0.9em; }
+        .col-wynik { flex: 2; display: flex; justify-content: center; align-items: center; gap: 4px; }
+        .col-joker { flex: 1; text-align: center; }
+        
+        input[type="number"] { width: 35px; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding: 4px; }
+        input[type="number"]::placeholder { color: #ccc; }
+        
+        .user-section { margin-top: 30px; }
+        .user-section label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .user-input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+        
+        .btn-send { width: 100%; background: #2e7d32; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; font-size: 16px; }
+        .btn-send:active { background: #1b5e20; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <span style="font-weight: bold;">Etap:</span>
+        <select id="stage">
+            <option value="0">1/4 Finału</option>
+            <option value="111111">1/2 Finału</option>
+            <option value="222222">Finały</option>
+        </select>
+    </header>
+
+    <div id="status" class="status">ŁADOWANIE...</div>
+
+    <div class="table-header">
+        <div class="col-mecz">Mecz</div>
+        <div class="col-wynik">Wynik</div>
+        <div class="col-joker">Joker</div>
+    </div>
+
+    <div id="match-list">
+        <!-- Tu pojawią się mecze -->
+    </div>
+
+    <div class="user-section">
+        <label>Imię i Nazwisko:</label>
+        <input type="text" id="userName" class="user-input" placeholder="Jan Kowalski">
+    </div>
+
+    <button class="btn-send" onclick="sendTypy()">WYŚLIJ TYPY</button>
+</div>
+
+<script>
+    const baseUrl = "[docs.google.com](https://docs.google.com/spreadsheets/d/TWÓJ_ID_ARKUSZA/pub?output=csv)";
+    const statusDiv = document.getElementById('status');
+    const stageSelect = document.getElementById('stage');
+    const matchListDiv = document.getElementById('match-list');
+
+    async function loadData() {
+        statusDiv.innerText = "ŁADOWANIE...";
+        matchListDiv.innerHTML = "";
+        const gid = stageSelect.value;
+        const url = `${baseUrl}&gid=${gid}`;
+
+        try {
+            const response = await fetch(url);
+            const text = await response.text();
+            const lines = text.split('\n').filter(line => line.trim() !== "");
+            
+            lines.forEach((line, index) => {
+                const teams = line.replace(/,/g, ' - ');
+                const row = document.createElement('div');
+                row.className = 'row';
+                row.innerHTML = `
+                    <div class="col-mecz">${teams}</div>
+                    <div class="col-wynik">
+                        <input type="number" class="g1" data-index="${index}" placeholder="0">
+                        <span>:</span>
+                        <input type="number" class="g2" data-index="${index}" placeholder="0">
+                    </div>
+                    <div class="col-joker">
+                        <input type="radio" name="joker" value="${index}">
+                    </div>
+                `;
+                matchListDiv.appendChild(row);
+            });
+            statusDiv.innerText = "TYPOWANIE";
+        } catch (error) {
+            statusDiv.innerText = "BŁĄD SIECI";
+            console.error(error);
+        }
+    }
+
+    function sendTypy() {
+        const name = document.getElementById('userName').value.trim();
+        const stageText = stageSelect.options[stageSelect.selectedIndex].text;
+        const jokerRadio = document.querySelector('input[name="joker"]:checked');
+
+        if (!name) return alert("Podaj imię i nazwisko!");
+        if (!jokerRadio) return alert("Wybierz JOKERA!");
+
+        let message = `Uczestnik: ${name}\nEtap: ${stageText}\n\nTYPY:\n`;
+        const rows = document.querySelectorAll('.row');
+        
+        rows.forEach((row, index) => {
+            const teams = row.querySelector('.col-mecz').innerText;
+            const g1 = row.querySelector('.g1').value || "0";
+            const g2 = row.querySelector('.g2').value || "0";
+            const isJoker = jokerRadio.value == index ? " [JOKER]" : "";
+            message += `${teams} ${g1}:${g2}${isJoker}\n`;
+        });
+
+        const mailto = `mailto:twój@email.pl?subject=Typy - ${stageText} - ${name}&body=${encodeURIComponent(message)}`;
+        window.location.href = mailto;
+    }
+
+    stageSelect.addEventListener('change', loadData);
+    loadData();
+</script>
+
+</body>
+</html>
