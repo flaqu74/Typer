@@ -99,7 +99,7 @@
                 `;
                 matchListDiv.appendChild(row);
             });
-            statusDiv.innerText = "PODAWANIE TYPÓW";
+            statusDiv.innerText = "TYPOWANIE";
         } catch (error) {
             statusDiv.innerText = "BŁĄD SIECI";
             console.error(error);
@@ -125,7 +125,7 @@
             message += `${teams} ${g1}:${g2}${isJoker}\n`;
         });
 
-        const mailto = `mailto:twój@email.pl?subject=Typy - ${stageText} - ${name}&body=${encodeURIComponent(message)}`;
+        const mailto = `mailto:typer_srlw@fajne.to?subject=Typy - ${stageText} - ${name}&body=${encodeURIComponent(message)}`;
         window.location.href = mailto;
     }
 
