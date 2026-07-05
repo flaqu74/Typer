@@ -4,33 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Typer PWA</title>
-    <!-- Ikona dla iOS -->
     <link rel="apple-touch-icon" href="[via.placeholder.com](https://via.placeholder.com/192/2e7d32/ffffff?text=T)">
     <style>
-        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; margin: 0; padding: 15px; }
+        body { font-family: -apple-system, sans-serif; background: #f5f5f5; margin: 0; padding: 15px; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 140px; }
-        
-        .status { text-align: center; font-weight: bold; color: #2e7d32; margin-bottom: 15px; }
-        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 150px; }
+        .status { text-align: center; font-weight: bold; color: #2e7d32; margin-bottom: 5px; }
         .table-header { display: flex; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; font-size: 0.9em; }
-        .row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f9f9f9; }
-        
+        .row { display: flex; align-items: center; padding: 4px 0; border-bottom: 1px solid #f9f9f9; }
         .col-mecz { flex: 3; font-size: 0.9em; }
         .col-wynik { flex: 2; display: flex; justify-content: center; align-items: center; gap: 4px; }
         .col-joker { flex: 1; text-align: center; }
-        
         input[type="number"] { width: 35px; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding: 4px; }
-        input[type="number"]::placeholder { color: #ccc; }
-        
-        .user-section { margin-top: 30px; }
-        .user-section label { display: block; font-weight: bold; margin-bottom: 5px; }
-        .user-input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
-        
-        .btn-send { width: 100%; background: #2e7d32; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; font-size: 16px; }
-        .btn-send:active { background: #1b5e20; }
+        .user-section { margin-top: 40px; }
+        .user-input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 30px;}
+        .btn-send { width: 100%; background: #2e7d32; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
     </style>
 </head>
 <body>
@@ -53,21 +42,21 @@
         <div class="col-joker">Joker</div>
     </div>
 
-    <div id="match-list">
-        <!-- Tu pojawią się mecze -->
-    </div>
+    <div id="match-list"></div>
 
     <div class="user-section">
-        <label>Imię i Nazwisko:</label>
-        <input type="text" id="userName" class="user-input" placeholder="Jan Kowalski">
+        <label style="font-weight: bold;">Imię i Nazwisko:</label>
+        <input type="text" id="userName" class="user-input" placeholder="np. Jan Kowalski">
     </div>
 
     <button class="btn-send" onclick="sendTypy()">WYŚLIJ TYPY</button>
 </div>
 
 <script>
+    // --- KONFIGURACJA ---
     const baseUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQd7RZ5-PO-knXZfYohz6daMXryQTgJ27DJIHAUEBLiB6wT-s5lB_zraplf3K-RMuEWFX3lTx52vLcf/pub?output=csv";
     const scriptUrl = "https://script.google.com/macros/s/AKfycbx-AqNSfQKd1h4BDk4raw9h8oMSgHBk1gbcYsY8sz__Xmr_4MhPC2RQZV4zvD4GcWDycA/exec";
+
     const statusDiv = document.getElementById('status');
     const stageSelect = document.getElementById('stage');
     const matchListDiv = document.getElementById('match-list');
@@ -75,8 +64,7 @@
     async function loadData() {
         statusDiv.innerText = "ŁADOWANIE...";
         matchListDiv.innerHTML = "";
-        const gid = stageSelect.value;
-        const url = `${baseUrl}&gid=${gid}&cachebash=${Date.now()}`;
+        const url = `${baseUrl}&gid=${stageSelect.value}&cache=${Date.now()}`;
 
         try {
             const response = await fetch(url);
@@ -85,10 +73,9 @@
             
             lines.forEach((line, index) => {
                 const cells = line.split(',');
-                // NOWA STRUKTURA: Kolumna 1 (0) = Nr, Kolumna 2 (1) = Drużyna A, Kolumna 3 (2) = Drużyna B
                 const nrMeczu = cells[0] || (index + 1);
-                const t1 = cells[1] || "Drużyna A";
-                const t2 = cells[2] || "Drużyna B";
+                const t1 = cells[1] || "Drugzyna A";
+                const t2 = cells[2] || "Drugzyna B";
 
                 const row = document.createElement('div');
                 row.className = 'row';
@@ -121,40 +108,37 @@
         if (!name || !jokerRadio) return alert("Podaj imię i zaznacz Jokera!");
 
         statusDiv.innerText = "WYSYŁANIE...";
-
         const typyDanych = [];
         const rows = document.querySelectorAll('.row');
         
         rows.forEach((row, index) => {
-            const colMecz = row.querySelector('.col-mecz');
-            const t1 = colMecz.getAttribute('data-t1');
-            const t2 = colMecz.getAttribute('data-t2');
-            const nr = colMecz.getAttribute('data-nr');
+            const el = row.querySelector('.col-mecz');
             const g1 = row.querySelector('.g1').value || "0";
             const g2 = row.querySelector('.g2').value || "0";
             
-            typyDanych.push({ nr: nr, druzyna: t1, gole: g1, joker: (jokerRadio.value == index ? "joker" : "") });
-            typyDanych.push({ nr: nr, druzyna: t2, gole: g2, joker: "" });
+            typyDanych.push({ 
+                nr: el.getAttribute('data-nr'), 
+                druzyna: el.getAttribute('data-t1'), 
+                gole: g1, 
+                joker: (jokerRadio.value == index ? "joker" : "") 
+            });
+            typyDanych.push({ 
+                nr: el.getAttribute('data-nr'), 
+                druzyna: el.getAttribute('data-t2'), 
+                gole: g2, 
+                joker: "" 
+            });
         });
 
-        const payload = {
-            user: name,
-            etap: stageText,
-            typy: typyDanych
-        };
+        const payload = { user: name, etap: stageText, typy: typyDanych };
 
         try {
-            await fetch(scriptUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify(payload)
-            });
-            alert("Typy zostały zapisane w arkuszu!");
-            // Czyścimy formularz po sukcesie
+            await fetch(scriptUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            alert("Typy zostały zapisane!");
             document.getElementById('userName').value = "";
-            loadData(); 
+            loadData();
         } catch (error) {
-            alert("Błąd wysyłania!");
+            alert("Wystąpił błąd!");
             statusDiv.innerText = "BŁĄD";
         }
     }
@@ -163,8 +147,5 @@
     loadData();
 </script>
 
-  
-
-    
 </body>
 </html>
