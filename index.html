@@ -108,23 +108,26 @@ async function loadPlayers() {
         const response = await fetch(urlGracze);
         const text = await response.text();
         
-        // Rozbijamy tekst na linie (nazwiska)
-        const names = text.split('\n')
-            .map(name => name.trim().replace(/"/g, '')) // Usuwamy cudzysłowy i spacje
-            .filter(name => name !== "" && name !== "Nazwisko"); // Omijamy puste i nagłówek
+        // CSV z Google często ma \r na końcu linii - musimy to precyzyjniej wyczyścić
+        const names = text.split(/\r?\n/)
+            .map(name => name.trim().replace(/"/g, ''))
+            .filter(name => name !== "" && name.toLowerCase() !== "nazwisko");
         
         const datalist = document.getElementById('playersList');
         datalist.innerHTML = ""; 
         
         names.forEach(name => {
             const option = document.createElement('option');
-            option.value = name;
+            option.value = name; // Przeglądarka filtruje po tym polu
             datalist.appendChild(option);
         });
+        
+        console.log("Pobrano graczy:", names.length);
     } catch (error) {
-        console.error("Nie udało się pobrać listy graczy");
+        console.error("Błąd listy graczy:", error);
     }
 }
+
 
     
     async function sendTypy() {
