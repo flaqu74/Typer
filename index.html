@@ -44,10 +44,12 @@
 
     <div id="match-list"></div>
 
-    <div class="user-section">
-        <label style="font-weight: bold;">Imię i Nazwisko:</label>
-        <input type="text" id="userName" class="user-input" placeholder="np. Jan Kowalski">
-    </div>
+<div class="user-section">
+    <label style="font-weight: bold;">Imię i Nazwisko:</label>
+    <input type="text" id="userName" class="user-input" list="playersList" placeholder="Zacznij pisać...">
+    <datalist id="playersList"></datalist>
+</div>
+
 
     <button class="btn-send" onclick="sendTypy()">WYŚLIJ TYPY</button>
 </div>
@@ -56,6 +58,7 @@
     // --- KONFIGURACJA ---
     const baseUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQd7RZ5-PO-knXZfYohz6daMXryQTgJ27DJIHAUEBLiB6wT-s5lB_zraplf3K-RMuEWFX3lTx52vLcf/pub?output=csv";
     const scriptUrl = "https://script.google.com/macros/s/AKfycbx-AqNSfQKd1h4BDk4raw9h8oMSgHBk1gbcYsY8sz__Xmr_4MhPC2RQZV4zvD4GcWDycA/exec";
+    const urlGracze = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQd7RZ5-PO-knXZfYohz6daMXryQTgJ27DJIHAUEBLiB6wT-s5lB_zraplf3K-RMuEWFX3lTx52vLcf/pubhtml?gid=449826596&single=true";
 
     const statusDiv = document.getElementById('status');
     const stageSelect = document.getElementById('stage');
@@ -100,6 +103,30 @@
         }
     }
 
+async function loadPlayers() {
+    try {
+        const response = await fetch(urlGracze);
+        const text = await response.text();
+        
+        // Rozbijamy tekst na linie (nazwiska)
+        const names = text.split('\n')
+            .map(name => name.trim().replace(/"/g, '')) // Usuwamy cudzysłowy i spacje
+            .filter(name => name !== "" && name !== "Nazwisko"); // Omijamy puste i nagłówek
+        
+        const datalist = document.getElementById('playersList');
+        datalist.innerHTML = ""; 
+        
+        names.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            datalist.appendChild(option);
+        });
+    } catch (error) {
+        console.error("Nie udało się pobrać listy graczy");
+    }
+}
+
+    
     async function sendTypy() {
         const name = document.getElementById('userName').value.trim();
         const stageText = stageSelect.options[stageSelect.selectedIndex].text;
