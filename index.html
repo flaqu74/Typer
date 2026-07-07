@@ -20,6 +20,10 @@
         .user-section { margin-top: 40px; }
         .user-input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 30px;}
         .btn-send { width: 100%; background: #2e7d32; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .autocomplete{position:relative; width:100%;}
+        .autocomplete-items{ position:absolute;top:100%; left:0; right:0; background:#fff; border:1px solid #ccc; border-top:none; max-height:220px; overflow-y:auto; z-index:9999; display:none;}
+        .autocomplete-item{ padding:10px 12px; cursor:pointer;}
+        .autocomplete-item:hover{background:#e8f5e9;}
     </style>
 </head>
 <body>
@@ -46,8 +50,15 @@
 
 <div class="user-section">
     <label style="font-weight: bold;">Imię i Nazwisko:</label>
-    <input type="text" id="userName" class="user-input" list="playersList" placeholder="Zacznij pisać...">
-    <datalist id="playersList"></datalist>
+    <div class="autocomplete">
+    <input
+        type="text"
+        id="playerName"
+        placeholder="Zacznij pisać..."
+        autocomplete="off">
+
+    <div id="playersList" class="autocomplete-items"></div>
+</div>
 </div>
 
 
@@ -63,6 +74,10 @@
     const statusDiv = document.getElementById('status');
     const stageSelect = document.getElementById('stage');
     const matchListDiv = document.getElementById('match-list');
+
+    let players = [];
+    const input = document.getElementById("playerName");
+    const list = document.getElementById("playersList");
 
     async function loadData() {
         statusDiv.innerText = "ŁADOWANIE...";
@@ -113,30 +128,64 @@ async function loadPlayers() {
 
         const text = await response.text();
 
-        const names = [...new Set(
+        players = [...new Set(
             text
-                .replace(/^\uFEFF/, "") // usuń BOM
+                .replace(/^\uFEFF/, "")
                 .split(/\r?\n/)
                 .map(row => row.split(",")[0].trim().replace(/"/g, ""))
-                .filter(name => name && name.toLowerCase() !== "nazwisko" )
+                .filter(name => name && name.toLowerCase() !== "nazwisko")
         )];
 
-        const datalist = document.getElementById("playersList");
-        datalist.replaceChildren();
+        console.log("Pobrano graczy:", players.length);
 
-        names.forEach(name => {
-            datalist.appendChild(new Option(name, name));
-        });
-
-        console.log(`Pobrano graczy: ${names.length}`);
     } catch (error) {
         console.error("Błąd listy graczy:", error);
     }
 }
+input.addEventListener("input", function () {
 
+    const value = this.value.toLowerCase();
+
+    list.innerHTML = "";
+
+    if (value === "") {
+        list.style.display = "none";
+        return;
+    }
+
+    const found = players
+        .filter(name => name.toLowerCase().includes(value))
+        .slice(0, 10);
+
+    found.forEach(name => {
+
+        const div = document.createElement("div");
+        div.className = "autocomplete-item";
+        div.textContent = name;
+
+        div.onclick = function () {
+            input.value = name;
+            list.style.display = "none";
+        };
+
+        list.appendChild(div);
+
+    });
+
+    list.style.display = found.length ? "block" : "none";
+
+});
+
+document.addEventListener("click", function (e) {
+
+    if (!e.target.closest(".autocomplete")) {
+        list.style.display = "none";
+    }
+
+});
     
     async function sendTypy() {
-        const name = document.getElementById('userName').value.trim();
+        const name = document.getElementById('playerName').value.trim();
         const stageText = stageSelect.options[stageSelect.selectedIndex].text;
         const jokerRadio = document.querySelector('input[name="joker"]:checked');
 
@@ -170,7 +219,7 @@ async function loadPlayers() {
         try {
             await fetch(scriptUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
             alert("Typy zostały zapisane!");
-            document.getElementById('userName').value = "";
+            document.getElementById('playerName').value = "";
             loadData();
         } catch (error) {
             alert("Wystąpił błąd!");
