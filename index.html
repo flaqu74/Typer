@@ -117,11 +117,8 @@ async function loadPlayers() {
             text
                 .replace(/^\uFEFF/, "") // usuń BOM
                 .split(/\r?\n/)
-                .map(name => name.trim().replace(/^"|"$/g, ""))
-                .filter(name =>
-                    name &&
-                    name.toLowerCase() !== "nazwisko"
-                )
+                .map(row => row.split(",")[0].trim().replace(/"/g, ""))
+                .filter(name => name && name.toLowerCase() !== "nazwisko" )
         )];
 
         const datalist = document.getElementById("playersList");
