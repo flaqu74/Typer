@@ -106,28 +106,36 @@
 async function loadPlayers() {
     try {
         const response = await fetch(urlGracze);
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
         const text = await response.text();
-        
-        // CSV z Google często ma \r na końcu linii - musimy to precyzyjniej wyczyścić
-        const names = text.split(/\r?\n/)
-            .map(name => name.trim().replace(/"/g, ''))
-            .filter(name => name !== "" && name.toLowerCase() !== "nazwisko");
-        
-        const datalist = document.getElementById('playersList');
-        datalist.innerHTML = ""; 
-        
+
+        const names = [...new Set(
+            text
+                .replace(/^\uFEFF/, "") // usuń BOM
+                .split(/\r?\n/)
+                .map(name => name.trim().replace(/^"|"$/g, ""))
+                .filter(name =>
+                    name &&
+                    name.toLowerCase() !== "nazwisko"
+                )
+        )];
+
+        const datalist = document.getElementById("playersList");
+        datalist.replaceChildren();
+
         names.forEach(name => {
-            const option = document.createElement('option');
-            option.value = name; // Przeglądarka filtruje po tym polu
-            datalist.appendChild(option);
+            datalist.appendChild(new Option(name, name));
         });
-        
-        console.log("Pobrano graczy:", names.length);
+
+        console.log(`Pobrano graczy: ${names.length}`);
     } catch (error) {
         console.error("Błąd listy graczy:", error);
     }
 }
-
 
     
     async function sendTypy() {
