@@ -125,13 +125,9 @@
 async function loadPlayers() {
     try {
         const response = await fetch(urlGracze);
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
+        if (!response.ok) {throw new Error(`HTTP ${response.status}`);}
 
         const text = await response.text();
-
         players = [...new Set(
             text
                 .replace(/^\uFEFF/, "")
@@ -142,27 +138,19 @@ async function loadPlayers() {
 
         console.log("Pobrano graczy:", players.length);
 
-    } catch (error) {
-        console.error("Błąd listy graczy:", error);
-    }
+    } catch (error) {console.error("Błąd listy graczy:", error);}
 }
+    
 input.addEventListener("input", function () {
-
     const value = this.value.toLowerCase();
-
     list.innerHTML = "";
-
-    if (value === "") {
-        list.style.display = "none";
-        return;
-    }
+    if (value === "") {list.style.display = "none"; return;}
 
     const found = players
         .filter(name => name.toLowerCase().includes(value))
         .slice(0, 10);
 
     found.forEach(name => {
-
         const div = document.createElement("div");
         div.className = "autocomplete-item";
         div.textContent = name;
@@ -171,24 +159,25 @@ input.addEventListener("input", function () {
             input.value = name;
             list.style.display = "none";
         };
-
         list.appendChild(div);
-
     });
-
     list.style.display = found.length ? "block" : "none";
-
 });
 
 document.addEventListener("click", function (e) {
-
     if (!e.target.closest(".autocomplete")) {
         list.style.display = "none";
     }
+});
 
+input.addEventListener("blur", function () {
+    if (this.value && !players.includes(this.value)) {
+        alert("Wybierz nazwisko z listy.");
+        this.value = "";
+    }
 });
     
-    async function sendTypy() {
+async function sendTypy() {
         const name = document.getElementById('playerName').value.trim();
         const stageText = stageSelect.options[stageSelect.selectedIndex].text;
         const jokerRadio = document.querySelector('input[name="joker"]:checked');
