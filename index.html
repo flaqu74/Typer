@@ -207,6 +207,7 @@ async function sendTypy() {
             const el = row.querySelector('.col-mecz');
             const g1 = row.querySelector('.g1').value || "0";
             const g2 = row.querySelector('.g2').value || "0";
+            const teams = row.querySelector('.col-mecz').innerText;
             const isJoker = (jokerRadio.value == index) ? " [JOKER]" : "";
             message += `${teams} ${g1}:${g2}${isJoker}\n`;
             
@@ -229,7 +230,7 @@ async function sendTypy() {
         const payload = { user: name, etap: stageText, typy: typyDanych };
 
         try {
-            //await fetch(scriptUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            await fetch(scriptUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
             alert("Typy zostały zapisane!");
             button.innerText = "WYSŁANE";
             document.getElementById('playerName').value = "";
