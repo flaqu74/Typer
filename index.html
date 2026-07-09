@@ -85,8 +85,8 @@
     const baseUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQd7RZ5-PO-knXZfYohz6daMXryQTgJ27DJIHAUEBLiB6wT-s5lB_zraplf3K-RMuEWFX3lTx52vLcf/pub?output=csv";
     //Poprzednie wdrożenie
     //const scriptUrl = "https://script.google.com/macros/s/AKfycbx-AqNSfQKd1h4BDk4raw9h8oMSgHBk1gbcYsY8sz__Xmr_4MhPC2RQZV4zvD4GcWDycA/exec";
-    
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbw6t7n0dwW57kI7iXJhjDydDwgBIOJWATbZ7C0HMqO1R_7ADeKqFJVDS9BwFYFy0N9i/exec";
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbyaHuAT-s4SU187RfK4PaySnz3vuVBl5X9iSGGEWRy25tI8_P0vyK-b0C3ap31jMLBZHQ/exec";
+    //const scriptUrl = "https://script.google.com/macros/s/AKfycbw6t7n0dwW57kI7iXJhjDydDwgBIOJWATbZ7C0HMqO1R_7ADeKqFJVDS9BwFYFy0N9i/exec";
     //const urlGracze = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQd7RZ5-PO-knXZfYohz6daMXryQTgJ27DJIHAUEBLiB6wT-s5lB_zraplf3K-RMuEWFX3lTx52vLcf/pub?output=csv&gid=449826596";
     const urlGracze = scriptUrl;
 
@@ -158,36 +158,51 @@ async function loadPlayers() {
 
     } catch (error) {console.error("Błąd listy graczy:", error);}
 } */   
-
 async function loadPlayers() {
     try {
-        const response = await fetch(urlGracze);
-        players = await response.json();
+        const response = await fetch(scriptUrl + "?action=players");
+        if (!response.ok) {
+            throw new Error("Błąd pobierania listy graczy.");
         }
-    catch(error) { console.error(error);}
+        players = await response.json();
+        console.log(players);
     }
+    catch(error){
+        console.error(error);
+        alert("Nie udało się pobrać listy graczy.");
+    }
+}
     
 input.addEventListener("input", function () {
     const value = this.value.toLowerCase();
+    selectedPlayerId = null;
     list.innerHTML = "";
-    if (value === "") {list.style.display = "none"; return;}
-
+    if (value.length == 0) {
+        list.style.display = "none";
+        return;
+    }
     const found = players
-        .filter(player => name.toLowerCase().includes(value))
-        .slice(0, 10);
-
+        .filter(player =>
+            player.name.toLowerCase().includes(value)
+        )
+        .slice(0,10);
     found.forEach(player => {
         const div = document.createElement("div");
         div.className = "autocomplete-item";
-        div.textContent = name;
-        div.onclick = function () {
+        div.textContent = player.name;
+        div.onclick = function(){
             input.value = player.name;
+            selectedPlayerId = player.id;
             list.style.display = "none";
         };
         list.appendChild(div);
     });
-    list.style.display = found.length ? "block" : "none";
+    list.style.display = found.length
+        ? "block"
+        : "none";
 });
+    
+
 
 document.addEventListener("click", function (e) {
     if (!e.target.closest(".autocomplete")) {
@@ -254,7 +269,8 @@ async function sendTypy() {
         const payload = { id: selectedPlayerId, pin: pin, etap: stageText, typy: typyDanych };
 
         try {
-            const response = await fetch(scriptUrl, { method: 'POST', body: JSON.stringify(payload) });
+            //const response = await fetch(scriptUrl, { method: 'POST', body: JSON.stringify(payload) });
+            const response = await fetch(scriptUrl,{ method:"POST", headers:{ "Content-Type":"application/json"}, body:JSON.stringify(payload) });
             const result = await response.json();
             if (!result.success) {
                 alert(result.message);
