@@ -54,15 +54,25 @@
 
 <div class="user-section">
     <label>Imię i Nazwisko:</label>
-    <div class="autocomplete">
-    <input
-        type="text"
-        id="playerName"
-        placeholder="Zacznij pisać..."
-        autocomplete="off">
+    <div style="display:flex; gap:10px; align-items:flex-start;">
+        <div class="autocomplete" style="flex:3;">
+            <input
+                type="text"
+                id="playerName"
+                placeholder="Imię i nazwisko"
+                autocomplete="off">
+           <div id="playersList" class="autocomplete-items"></div>
+        </div>
 
-    <div id="playersList" class="autocomplete-items"></div>
-</div>
+        <div style="flex:1;">
+        <input
+            type="password"
+            id="playerPin"
+            placeholder="PIN"
+            maxlength="6"
+            style="width:100%; box-sizing:border-box; padding:12px 15px; font-size:16px; border:1px solid #ccc; border-radius:8px;">
+        </div>
+    </div>
 </div>
 
 
@@ -77,7 +87,8 @@
     //const scriptUrl = "https://script.google.com/macros/s/AKfycbx-AqNSfQKd1h4BDk4raw9h8oMSgHBk1gbcYsY8sz__Xmr_4MhPC2RQZV4zvD4GcWDycA/exec";
     
     const scriptUrl = "https://script.google.com/macros/s/AKfycbw6t7n0dwW57kI7iXJhjDydDwgBIOJWATbZ7C0HMqO1R_7ADeKqFJVDS9BwFYFy0N9i/exec";
-    const urlGracze = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQd7RZ5-PO-knXZfYohz6daMXryQTgJ27DJIHAUEBLiB6wT-s5lB_zraplf3K-RMuEWFX3lTx52vLcf/pub?output=csv&gid=449826596";
+    //const urlGracze = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQd7RZ5-PO-knXZfYohz6daMXryQTgJ27DJIHAUEBLiB6wT-s5lB_zraplf3K-RMuEWFX3lTx52vLcf/pub?output=csv&gid=449826596";
+    const urlGracze = scriptUrl;
 
     const statusDiv = document.getElementById('status');
     const stageSelect = document.getElementById('stage');
@@ -86,6 +97,7 @@
     const mailOdbiorcy = "typer_srlw@fajne.to";
 
     let players = [];
+    let selectedPlayerId = null;
     const input = document.getElementById("playerName");
     const list = document.getElementById("playersList");
 
@@ -127,7 +139,7 @@
             statusDiv.innerText = "BŁĄD SIECI";
         }
     }
-
+/*
 async function loadPlayers() {
     try {
         const response = await fetch(urlGracze);
@@ -145,7 +157,15 @@ async function loadPlayers() {
         console.log("Pobrano graczy:", players.length);
 
     } catch (error) {console.error("Błąd listy graczy:", error);}
-}
+} */   
+
+async function loadPlayers() {
+    try {
+        const response = await fetch(urlGracze);
+        players = await response.json();
+        }
+    catch(error) { console.error(error);}
+    }
     
 input.addEventListener("input", function () {
     const value = this.value.toLowerCase();
@@ -153,16 +173,15 @@ input.addEventListener("input", function () {
     if (value === "") {list.style.display = "none"; return;}
 
     const found = players
-        .filter(name => name.toLowerCase().includes(value))
+        .filter(player => name.toLowerCase().includes(value))
         .slice(0, 10);
 
-    found.forEach(name => {
+    found.forEach(player => {
         const div = document.createElement("div");
         div.className = "autocomplete-item";
         div.textContent = name;
-
         div.onclick = function () {
-            input.value = name;
+            input.value = player.name;
             list.style.display = "none";
         };
         list.appendChild(div);
@@ -187,14 +206,17 @@ async function sendTypy() {
         const name = document.getElementById('playerName').value.trim();
         const stageText = stageSelect.options[stageSelect.selectedIndex].text;
         const jokerRadio = document.querySelector('input[name="joker"]:checked');
-
+        const pin = document.getElementById("playerPin").value.trim();
+        
         if (!name || !jokerRadio) return alert("Podaj imię i zaznacz Jokera!");
-        if (!players.includes(name)) {
+  /*      if (!players.includes(name)) {
                 alert("Wybierz swoje imię i nazwisko z listy");
                 document.getElementById("playerName").focus();
                 return;
-                }
-        
+                }  */
+        if (!selectedPlayerId) {alert("Wybierz nazwisko z listy."); return;}
+        if (!pin) {alert("Podaj PIN."); return;}
+    
             const button = document.getElementById("sendBtn");
             button.disabled = true;
             button.innerText = "WYSYŁANIE...";
@@ -229,10 +251,20 @@ async function sendTypy() {
             });
         });
 
-        const payload = { user: name, etap: stageText, typy: typyDanych };
+        const payload = { id: selectedPlayerId, pin: pin, etap: stageText, typy: typyDanych };
 
         try {
-            await fetch(scriptUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            const response = await fetch(scriptUrl, { method: 'POST', body: JSON.stringify(payload) });
+            const result = await response.json();
+            if (!result.success) {
+                alert(result.message);
+                button.disabled = false;
+                button.innerText = "WYŚLIJ TYPY";
+            return;
+            }
+            document.getElementById("playerPin").value = "";
+            selectedPlayerId = null;
+            document.getElementById("playerName").value = "";
             alert("Typy zostały zapisane!");
             button.innerText = "WYSŁANE";
             document.getElementById('playerName').value = "";
