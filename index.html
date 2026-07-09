@@ -67,7 +67,7 @@
 
 
     <button id="sendBtn" class="btn-send" onclick="sendTypy()">WYŚLIJ TYPY</button>
-    <button id="mailButton" style="display:none;"> WYŚLIJ POTWIERDZENIE SWÓJ E-MAIL</button>
+    <button id="mailButton" class="btn-send" style="display:none;">WYŚLIJ POTWIERDZENIE E-MAIL</button>
 </div>
 
 <script>
@@ -239,8 +239,9 @@ async function sendTypy() {
             loadData();
             const subject = `Potwierdzenie wysłania typów - ${stageText} - ${name}`;
             const mailto = `mailto:${mailOdbiorcy}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+            button.style.display = "none";
             const mailButton = document.getElementById("mailButton");
-            mailButton.style.display = "inline-block";
+            mailButton.style.display = "block";
             mailButton.onclick = () => { window.location.href = mailto;  mailButton.disabled = true; mailButton.innerText = "OTWARTO KLIENTA POCZTOWEGO";};
         } catch (error) {
             alert("Wystąpił błąd!");
