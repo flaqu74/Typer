@@ -194,6 +194,11 @@ document.addEventListener("click", function (e) {
         const jokerRadio = document.querySelector('input[name="joker"]:checked');
 
         if (!name || !jokerRadio) return alert("Podaj imię i zaznacz Jokera!");
+        if (!players.includes(name)) {
+                alert("Wybierz swoje imię i nazwisko z listy");
+                document.getElementById("playerName").focus();
+                return;
+                }
         
             const button = document.getElementById("sendBtn");
             button.disabled = true;
