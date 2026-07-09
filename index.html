@@ -67,6 +67,7 @@
 
 
     <button id="sendBtn" class="btn-send" onclick="sendTypy()">WYŚLIJ TYPY</button>
+    <button id="mailButton" style="display:none;"> WYŚLIJ POTWIERDZENIE SWÓJ E-MAIL</button>
 </div>
 
 <script>
@@ -199,11 +200,15 @@ async function sendTypy() {
         statusDiv.innerText = "WYSYŁANIE...";
         const typyDanych = [];
         const rows = document.querySelectorAll('.row');
-        
+
+        let message = `Uczestnik: ${name}\nRunda play-off: ${stageText}\n\nTYPY:\n`;
+    
         rows.forEach((row, index) => {
             const el = row.querySelector('.col-mecz');
             const g1 = row.querySelector('.g1').value || "0";
             const g2 = row.querySelector('.g2').value || "0";
+            const isJoker = (jokerRadio.value == index) ? " [JOKER]" : "";
+            message += `${teams} ${g1}:${g2}${isJoker}\n`;
             
             typyDanych.push({ 
                 nr: el.getAttribute('data-nr'), 
@@ -229,6 +234,11 @@ async function sendTypy() {
             button.innerText = "WYSŁANE";
             document.getElementById('playerName').value = "";
             loadData();
+            const subject = `Potwierdzenie wysłania typów - ${stageText} - ${name}`;
+            const mailto = `mailto:${mailOdbiorcy}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+            const mailButton = document.getElementById("mailButton");
+            mailButton.style.display = "inline-block";
+            mailButton.onclick = () => { window.location.href = mailto;  mailButton.disabled = true; mailButton.innerText = "OTWARTO KLIENTA POCZTOWEGO";};
         } catch (error) {
             alert("Wystąpił błąd!");
                 button.disabled = false;
