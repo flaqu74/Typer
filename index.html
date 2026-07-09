@@ -209,14 +209,14 @@ async function sendTypy() {
                 nr: el.getAttribute('data-nr'), 
                 druzyna: el.getAttribute('data-t1'), 
                 gole: g1, 
-                joker: (jokerRadio.value == index ? "joker" : "") 
+                joker: (jokerRadio.value == index ? "joker" : ""), 
                 wiersz: 2*index
             });
             typyDanych.push({ 
                 nr: el.getAttribute('data-nr'), 
                 druzyna: el.getAttribute('data-t2'), 
                 gole: g2, 
-                joker: "" 
+                joker: "",
                 wiersz: 2*index + 1
             });
         });
